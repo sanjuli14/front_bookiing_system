@@ -1,0 +1,205 @@
+<div class="p-6 max-w-7xl mx-auto animate-fade-in pb-20">
+  
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-3">
+        <i class="fa-solid fa-stethoscope text-primary-500"></i> Diagnóstico Financiero
+      </h1>
+      <p class="text-sm text-slate-500 mt-1">Análisis de rentabilidad y detección de anomalías en reservas activas.</p>
+    </div>
+    
+    <div class="flex gap-3">
+      <a routerLink="/admin/dashboard" class="btn bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm shrink-0">
+        <i class="fa-solid fa-chart-pie mr-2"></i> Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="card p-6 h-32 animate-pulse bg-slate-100"></div>
+      <div class="card p-6 h-32 animate-pulse bg-slate-100"></div>
+      <div class="card p-6 h-32 animate-pulse bg-slate-100"></div>
+    </div>
+    <div class="card h-64 animate-pulse bg-slate-100"></div>
+  </div>
+
+  <!-- Content State -->
+  <ng-container *ngIf="!loading">
+    
+    <!-- Resumen General -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      
+      <!-- Ganancia Neta -->
+      <div class="card overflow-hidden shadow-lg" [ngClass]="totalProfit < 0 ? 'bg-red-500' : 'bg-green-500'">
+        <div class="p-6 text-white relative z-10">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-white/80 text-sm font-medium uppercase tracking-wider mb-1">Ganancia Neta</p>
+              <h3 class="text-3xl font-bold">${{ totalProfit | number:'1.2-2' }}</h3>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-xl">
+              <i class="fa-solid fa-sack-dollar"></i>
+            </div>
+          </div>
+          <div class="mt-4 flex gap-4 text-sm text-white/90">
+            <div><span class="opacity-70">Venta:</span> ${{ totalRevenue | number:'1.2-2' }}</div>
+            <div><span class="opacity-70">Costo:</span> ${{ totalCost | number:'1.2-2' }}</div>
+          </div>
+        </div>
+        <div class="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-white/10 blur-2xl z-0"></div>
+      </div>
+
+      <!-- Margen Global -->
+      <div class="card overflow-hidden shadow-lg bg-indigo-500">
+        <div class="p-6 text-white relative z-10">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-white/80 text-sm font-medium uppercase tracking-wider mb-1">Margen Global</p>
+              <h3 class="text-3xl font-bold">{{ profitMarginPercentage | number:'1.2-2' }}%</h3>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-xl">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+          </div>
+          <div class="mt-4 text-sm text-white/90">
+            <span class="opacity-70">Promedio DB:</span> {{ dashboardMargin | number:'1.2-2' }}%
+          </div>
+        </div>
+        <div class="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/10 blur-2xl z-0"></div>
+      </div>
+
+      <!-- Reservas Problematicas -->
+      <div class="card overflow-hidden shadow-lg" [ngClass]="negativeProfitData.length > 0 ? 'bg-orange-500' : 'bg-primary-500'">
+        <div class="p-6 text-white relative z-10">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-white/80 text-sm font-medium uppercase tracking-wider mb-1">Alertas (Pérdidas)</p>
+              <h3 class="text-3xl font-bold">{{ negativeProfitData.length }}</h3>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-xl">
+              <i class="fa-solid" [ngClass]="negativeProfitData.length > 0 ? 'fa-triangle-exclamation' : 'fa-check'"></i>
+            </div>
+          </div>
+          <div class="mt-4 text-sm text-white/90">
+            De {{ totalActiveReservations }} reservas activas
+          </div>
+        </div>
+        <div class="absolute -bottom-6 -left-6 w-32 h-32 rounded-full bg-white/10 blur-2xl z-0"></div>
+      </div>
+
+    </div>
+
+    <!-- Reservas con Pérdida -->
+    <div *ngIf="negativeProfitData.length > 0; else noLosses" class="card shadow-md border-l-4 border-orange-500 mb-8 overflow-hidden">
+      <div class="bg-orange-50 border-b border-orange-100 p-4 flex items-center gap-3">
+        <i class="fa-solid fa-triangle-exclamation text-orange-500 text-xl"></i>
+        <h3 class="text-lg font-bold text-orange-900">Atención: Reservas procesadas con Costo > Venta</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-500 border-b border-slate-200">
+              <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider">Código</th>
+              <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider">Hotel</th>
+              <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-right">Venta</th>
+              <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-right">Costo</th>
+              <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-right">Pérdida</th>
+              <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-right">Margen</th>
+              <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-center">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr *ngFor="let data of negativeProfitData" class="hover:bg-slate-50 transition-colors">
+              <td class="px-6 py-4">
+                <a [routerLink]="['/admin/reservations', data.reservation.id, 'edit']" class="text-primary-600 font-semibold hover:underline">
+                  {{ data.reservation.booking_code }}
+                </a>
+              </td>
+              <td class="px-6 py-4 text-sm text-slate-700 truncate max-w-xs" [title]="data.reservation.hotel">
+                {{ data.reservation.hotel }}
+              </td>
+              <td class="px-6 py-4 text-sm text-slate-700 text-right">${{ data.reservation.sale_price | number:'1.2-2' }}</td>
+              <td class="px-6 py-4 text-sm text-slate-700 text-right">${{ data.reservation.touch_cost | number:'1.2-2' }}</td>
+              <td class="px-6 py-4 text-sm font-bold text-red-600 text-right">-${{ data.loss | number:'1.2-2' }}</td>
+              <td class="px-6 py-4 text-sm text-red-600 text-right">{{ data.reservation.profit_percentage | number:'1.2-2' }}%</td>
+              <td class="px-6 py-4 text-center">
+                <span class="px-2.5 py-1 text-xs font-bold rounded-full"
+                      [ngClass]="data.reservation.status === 'OK' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'">
+                  {{ data.reservation.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <ng-template #noLosses>
+      <div class="card shadow-md border-l-4 border-green-500 mb-8 overflow-hidden bg-green-50/50">
+        <div class="p-6 flex items-center gap-4 text-green-800">
+          <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-check text-green-600 text-xl"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold">Sin reservas en pérdida</h3>
+            <p class="text-sm opacity-80 mt-1">Todas las reservas activas ({{ totalActiveReservations }}) registran márgenes de venta positivos.</p>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+
+    <!-- Análisis Detallado de Márgenes -->
+    <div class="card shadow-md">
+      <div class="border-b border-slate-200 p-6">
+        <h3 class="text-lg font-bold text-slate-800">📊 Análisis Detallado de Márgenes ({{ marginData.length }} reservas)</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-500 border-b border-slate-200">
+              <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider">Código</th>
+              <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-right">Venta</th>
+              <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-right">Costo</th>
+              <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-right">Margen BD</th>
+              <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-right">Margen Real</th>
+              <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-right">Diferencia</th>
+              <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-center">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr *ngFor="let data of marginData" class="hover:bg-slate-50 transition-colors">
+              <td class="px-6 py-4">
+                <a [routerLink]="['/admin/reservations', data.reservation.id, 'edit']" class="text-primary-600 font-medium hover:underline">
+                  {{ data.reservation.booking_code }}
+                </a>
+              </td>
+              <td class="px-6 py-4 text-sm text-slate-700 text-right">${{ data.sale_price | number:'1.2-2' }}</td>
+              <td class="px-6 py-4 text-sm text-slate-700 text-right">${{ data.touch_cost | number:'1.2-2' }}</td>
+              <td class="px-6 py-4 text-sm text-slate-500 text-right">{{ data.stored_margin | number:'1.2-2' }}%</td>
+              <td class="px-6 py-4 text-sm font-medium text-slate-800 text-right">{{ data.manual_margin | number:'1.2-2' }}%</td>
+              <td class="px-6 py-4 text-sm text-right" [ngClass]="(data.difference > 0.1 || data.difference < -0.1) ? 'text-orange-600 font-bold' : 'text-slate-500'">
+                {{ data.difference > 0 ? '+' : '' }}{{ data.difference | number:'1.2-2' }}%
+              </td>
+              <td class="px-6 py-4 text-center">
+                <ng-container *ngIf="data.sale_price < data.touch_cost; else diffCheck">
+                  <span class="px-2 py-1 text-[10px] font-bold uppercase rounded bg-red-100 text-red-700">Pérdida</span>
+                </ng-container>
+                <ng-template #diffCheck>
+                  <ng-container *ngIf="data.difference > 0.1 || data.difference < -0.1; else okMark">
+                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded bg-orange-100 text-orange-700">Desvío</span>
+                  </ng-container>
+                </ng-template>
+                <ng-template #okMark>
+                  <span class="px-2 py-1 text-[10px] font-bold uppercase rounded bg-green-100 text-green-700">Sano</span>
+                </ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+  </ng-container>
+</div>
